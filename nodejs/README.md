@@ -11,6 +11,7 @@ Express application examples with OpenTelemetry instrumentation for Sematext Clo
 | **Kubernetes** | [Express Auto](kubernetes/auto-instrumentation/express/) | [Express Manual](kubernetes/manual-instrumentation/express/) |
 
 **Auto-Instrumentation**: Traces ✅ Metrics ✅ Logs ❌ (zero code changes, automatic instrumentation)
+
 **Manual Instrumentation**: Traces ✅ Metrics ✅ Logs ✅ (full control, custom spans, complete observability)
 
 ## Resources
