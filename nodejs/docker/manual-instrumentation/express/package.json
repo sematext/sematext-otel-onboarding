@@ -1,0 +1,24 @@
+{
+  "name": "sematext-nodejs-manual-docker",
+  "version": "1.0.0",
+  "description": "Node.js Express manual instrumentation example for Sematext (docker)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api-logs": "^0.48.0",
+    "@opentelemetry/sdk-node": "^0.48.0",
+    "@opentelemetry/sdk-metrics": "^1.21.0",
+    "@opentelemetry/sdk-logs": "^0.48.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.48.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.48.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.48.0",
+    "@opentelemetry/instrumentation-http": "^0.48.0",
+    "@opentelemetry/instrumentation-express": "^0.36.1",
+    "@opentelemetry/resources": "^1.21.0",
+    "@opentelemetry/semantic-conventions": "^1.21.0"
+  }
+}

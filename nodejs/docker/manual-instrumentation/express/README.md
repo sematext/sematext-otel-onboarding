@@ -1,0 +1,189 @@
+# Node.js Express - Manual Instrumentation (Docker)
+
+This example demonstrates manual OpenTelemetry instrumentation for a Node.js Express application running in Docker containers.
+
+## Telemetry Data
+
+| Type | Supported | Notes |
+|--------|-----------|-------|
+| **Traces** | ✅ | Manual span creation with full control |
+| **Metrics** | ✅ | Manual metric creation |
+| **Logs** | ✅ | Full OTLP logs export support |
+
+## Prerequisites
+
+- Docker installed
+- Docker Compose installed
+- Sematext Cloud account with Apps created (Tracing, Monitoring, Logs)
+
+## Quick Start
+
+### 1. Update Configuration in docker-compose.yaml
+
+Edit `docker-compose.yaml` and update:
+
+**Region** - Set based on your Sematext Cloud region:
+```yaml
+- REGION=US  # US for Sematext Cloud US, EU for Sematext Cloud EU
+```
+
+**Tokens** - Replace with your actual Sematext App tokens:
+```yaml
+- OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+- OTEL_NODEJS_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
+- OTEL_NODEJS_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+```
+
+Get your tokens from each App in Sematext Cloud.
+
+### 2. Start the Stack
+
+```bash
+docker-compose up -d
+```
+
+### 3. Generate Test Traffic
+
+```bash
+curl http://localhost:8080/
+curl http://localhost:8080/users/123
+curl http://localhost:8080/slow
+curl http://localhost:8080/error
+```
+
+### 4. View in Sematext Cloud
+
+Check your Sematext Tracing, Monitoring, and Logs Apps for telemetry data.
+
+## Key Differences from Auto-Instrumentation
+
+This example demonstrates **manual instrumentation**, which provides:
+
+1. **Explicit Span Creation**: Full control over when and how spans are created
+2. **Custom Nested Spans**: Create parent-child span relationships
+3. **Rich Span Attributes**: Add domain-specific context
+4. **Selective Instrumentation**: Only instrument what matters
+
+## Manual Instrumentation Highlights
+
+### Custom Nested Spans
+
+The `/users/:id` endpoint creates nested spans:
+
+```javascript
+await tracer.startActiveSpan('get-user-operation', async (parentSpan) => {
+    // Database lookup span
+    await tracer.startActiveSpan('database.lookup', async (dbSpan) => {
+        // ... db logic ...
+        dbSpan.end();
+    });
+
+    // Processing span
+    await tracer.startActiveSpan('process.user.data', async (processSpan) => {
+        // ... processing logic ...
+        processSpan.end();
+    });
+
+    parentSpan.end();
+});
+```
+
+### Error Tracking
+
+Manual error handling with detailed context:
+
+```javascript
+try {
+    throw new Error('Test error');
+} catch (error) {
+    span.recordException(error);
+    span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+    });
+    span.end();
+}
+```
+
+## Docker Configuration
+
+Same Docker setup as auto-instrumentation example, but with manual span creation in application code.
+
+See [Auto-Instrumentation Docker README](../auto-instrumentation/express/README.md) for detailed Docker configuration.
+
+## Viewing Custom Spans
+
+In Sematext Tracing App, you'll see:
+
+- **Nested span relationships**: Parent → Database → Processing
+- **Custom attributes**: `db.system`, `db.operation`, `user.id`, etc.
+- **Error details**: Exception type, message, and stack trace
+- **Operation types**: Distinguished by custom attributes
+
+## Common Tasks
+
+```bash
+# View logs with custom span information
+docker-compose logs -f nodejs-app
+
+# Restart after code changes
+docker-compose up -d --build
+
+# Stop and remove
+docker-compose down
+```
+
+## Troubleshooting
+
+### Custom Spans Not Appearing
+
+1. **Check spans are ended**:
+   Every `startSpan()` or `startActiveSpan()` must have a corresponding `end()` call
+
+2. **Verify span status**:
+   Set span status before ending:
+   ```javascript
+   span.setStatus({ code: SpanStatusCode.OK });
+   span.end();
+   ```
+
+3. **Check tracer initialization**:
+   Look for "OpenTelemetry Manual Instrumentation Configured" in logs
+
+### Spans Not Nested Properly
+
+Use `startActiveSpan` for automatic context propagation:
+
+```javascript
+// ✅ Correct: Uses startActiveSpan
+await tracer.startActiveSpan('parent', async (parent) => {
+    await tracer.startActiveSpan('child', async (child) => {
+        // Automatically nested
+        child.end();
+    });
+    parent.end();
+});
+```
+
+## Production Considerations
+
+Same as auto-instrumentation:
+- Use Docker secrets for tokens
+- Add resource limits
+- Implement health checks
+- Use multi-stage builds
+
+See [Auto-Instrumentation Docker README](../auto-instrumentation/express/README.md) for details.
+
+## Next Steps
+
+- **Deploy to Kubernetes**: See [Kubernetes manual example](../../kubernetes/manual-instrumentation/express/)
+- **Compare with Auto**: See [Auto-Instrumentation Docker example](../auto-instrumentation/express/)
+- **Add custom metrics**: Extend with manual metric creation
+
+## Resources
+
+- [OpenTelemetry Node.js Manual Instrumentation](https://opentelemetry.io/docs/languages/js/instrumentation/)
+- [Tracer API](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/_opentelemetry_api.Tracer.html)
+- [Span API](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/_opentelemetry_api.Span.html)
+- [Sematext Agent Documentation](https://sematext.com/docs/agents/sematext-agent/opentelemetry/)

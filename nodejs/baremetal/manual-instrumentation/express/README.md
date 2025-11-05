@@ -1,0 +1,343 @@
+# Node.js Express - Manual Instrumentation (Baremetal)
+
+This example demonstrates manual OpenTelemetry instrumentation for a Node.js Express application running on a local machine (baremetal).
+
+## Telemetry Data
+
+| Type | Supported | Notes |
+|--------|-----------|-------|
+| **Traces** | ✅ | Manual span creation with full control |
+| **Metrics** | ✅ | Manual metric creation |
+| **Logs** | ✅ | Full OTLP logs export support |
+
+## Prerequisites
+
+- Node.js 14+ installed
+- npm or yarn
+- Sematext Agent running on localhost
+- Sematext Apps created (Tracing, Monitoring, Logs)
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Environment
+
+Set environment variables for OpenTelemetry:
+
+```bash
+export OTEL_SERVICE_NAME=my-nodejs-app
+export OTEL_SERVICE_VERSION=1.0.0
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4338
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318
+export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://localhost:4328
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+```
+
+**Note**: Explicit endpoints are required for manual instrumentation to send all three signal types (traces, metrics, logs) correctly.
+
+### 3. Install Sematext Agent (if not already installed)
+
+Follow the [Sematext Agent Installation Guide](https://sematext.com/docs/agents/sematext-agent/installation/) for your operating system.
+
+**Verify agent is running:**
+
+```bash
+sudo systemctl status sematext-agent
+```
+
+### 4. Configure Sematext Agent
+
+**Enable OpenTelemetry:**
+
+```bash
+sudo /opt/spm/spm-monitor/bin/st-agent otel enable
+```
+
+**Enable traces, metrics, and logs:**
+
+```bash
+sudo /opt/spm/spm-monitor/bin/st-agent otel traces enable
+sudo /opt/spm/spm-monitor/bin/st-agent otel metrics enable
+sudo /opt/spm/spm-monitor/bin/st-agent otel logs enable
+```
+
+**Configure token group with your Sematext App tokens:**
+
+```bash
+sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
+  --name "my-token-group" \
+  --monitoring-token "YOUR_MONITORING_TOKEN" \
+  --traces-token "YOUR_TRACES_TOKEN" \
+  --logs-token "YOUR_LOGS_TOKEN"
+```
+
+Get your tokens from each App in Sematext Cloud.
+
+**Map your service name to the token group:**
+
+```bash
+sudo /opt/spm/spm-monitor/bin/st-agent otel services add \
+  --service-names "my-nodejs-app" \
+  --token-group "my-token-group"
+```
+
+**Restart the agent:**
+
+```bash
+sudo systemctl restart sematext-agent
+```
+
+### 5. Run the Application
+
+```bash
+npm start
+```
+
+The application will start on port 8080.
+
+### 6. Generate Test Traffic
+
+```bash
+# Root endpoint
+curl http://localhost:8080/
+
+# User endpoint with nested spans
+curl http://localhost:8080/users/123
+
+# Slow endpoint with multiple spans
+curl http://localhost:8080/slow
+
+# Error endpoint with error tracking
+curl http://localhost:8080/error
+```
+
+### 7. View in Sematext Cloud
+
+1. **Traces**: Open your Sematext Tracing App to see custom spans
+2. **Metrics**: Open your Sematext Monitoring App to see HTTP metrics
+3. **Logs**: Open your Sematext Logs App to see console logs
+
+## How Manual Instrumentation Works
+
+### Explicit SDK Configuration
+
+Manual instrumentation requires explicit setup of each instrumentation library:
+
+```javascript
+const sdk = new NodeSDK({
+    resource,
+    traceExporter,
+    instrumentations: [
+        new HttpInstrumentation({
+            requestHook: (span, request) => {
+                span.setAttribute('custom.http.instrumentation', 'manual');
+            },
+        }),
+        new ExpressInstrumentation({
+            requestHook: (span, request) => {
+                span.setAttribute('custom.express.instrumentation', 'manual');
+            },
+        }),
+    ],
+});
+```
+
+### Creating Custom Spans
+
+The main advantage of manual instrumentation is full control over span creation:
+
+**Simple Span:**
+```javascript
+const span = tracer.startSpan('my-operation');
+span.setAttribute('key', 'value');
+span.end();
+```
+
+**Active Span (Automatic Context Propagation):**
+```javascript
+await tracer.startActiveSpan('my-operation', async (span) => {
+    span.setAttribute('key', 'value');
+
+    // Child spans automatically inherit context
+    await someAsyncOperation();
+
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
+});
+```
+
+**Nested Spans:**
+```javascript
+await tracer.startActiveSpan('parent-operation', async (parentSpan) => {
+    // Parent span logic
+
+    await tracer.startActiveSpan('child-operation', async (childSpan) => {
+        // Child span logic
+        childSpan.setStatus({ code: SpanStatusCode.OK });
+        childSpan.end();
+    });
+
+    parentSpan.setStatus({ code: SpanStatusCode.OK });
+    parentSpan.end();
+});
+```
+
+### Error Handling
+
+Manual error tracking provides detailed error context:
+
+```javascript
+try {
+    // Your code
+} catch (error) {
+    span.recordException(error);
+    span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+    });
+    span.end();
+}
+```
+
+## Application Endpoints
+
+| Endpoint | Method | Description | Span Details |
+|----------|--------|-------------|--------------|
+| `/` | GET | Root endpoint | Single manual span |
+| `/users/:id` | GET | Get user by ID | Nested spans (parent, db, processing) |
+| `/slow` | GET | Slow endpoint | Multiple sequential spans |
+| `/error` | GET | Error endpoint | Error tracking and exception recording |
+| `/health` | GET | Health check | No custom spans |
+| `/ready` | GET | Readiness check | No custom spans |
+
+## Custom Span Examples
+
+### Database Query Span
+
+```javascript
+await tracer.startActiveSpan('database.lookup', async (dbSpan) => {
+    dbSpan.setAttributes({
+        'db.system': 'postgresql',
+        'db.operation': 'SELECT',
+        'db.table': 'users',
+        'user.id': userId
+    });
+
+    // Execute query
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+
+    dbSpan.setStatus({ code: SpanStatusCode.OK });
+    dbSpan.end();
+});
+```
+
+### Business Logic Span
+
+```javascript
+await tracer.startActiveSpan('process.user.data', async (processSpan) => {
+    processSpan.setAttributes({
+        'operation': 'transform',
+        'user.id': userId
+    });
+
+    // Business logic here
+    const processed = transformUserData(data);
+
+    processSpan.setStatus({ code: SpanStatusCode.OK });
+    processSpan.end();
+});
+```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `OTEL_SERVICE_NAME` | Yes | `nodejs-express-manual` | Service name (must match agent config) |
+| `OTEL_SERVICE_VERSION` | No | `1.0.0` | Service version |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Yes | `http://localhost:4338` | OTLP endpoint for traces |
+| `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | Yes | `http://localhost:4318` | OTLP endpoint for metrics |
+| `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | Yes | `http://localhost:4328` | OTLP endpoint for logs |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | No | `http/protobuf` | OTLP protocol |
+| `PORT` | No | `8080` | Application port |
+
+## Advantages of Manual Instrumentation
+
+1. **Full Control**: Explicitly define what gets traced
+2. **Custom Spans**: Create spans for business-critical operations
+3. **Rich Attributes**: Add domain-specific attributes
+4. **Nested Spans**: Model complex operations with parent-child relationships
+5. **Selective Instrumentation**: Only instrument what matters
+
+## When to Use Manual Instrumentation
+
+- **Business Logic Tracing**: Track domain-specific operations
+- **Fine-Grained Control**: Need precise control over span lifecycle
+- **Custom Attributes**: Add application-specific context
+- **Selective Instrumentation**: Only instrument critical paths
+- **Complex Workflows**: Model multi-step processes accurately
+
+## Comparison with Auto-Instrumentation
+
+| Feature | Auto-Instrumentation | Manual Instrumentation |
+|---------|---------------------|----------------------|
+| Setup Complexity | Low | Medium |
+| Code Changes | Minimal | Moderate |
+| Control | Limited | Full |
+| Custom Spans | Via API calls | Native |
+| Learning Curve | Easy | Moderate |
+
+## Troubleshooting
+
+### No Custom Spans Appearing
+
+1. **Verify tracer is initialized**:
+   Check console for "OpenTelemetry Manual Instrumentation Configured" message
+
+2. **Ensure spans are ended**:
+   ```javascript
+   span.end(); // Always end your spans!
+   ```
+
+3. **Check span status**:
+   ```javascript
+   span.setStatus({ code: SpanStatusCode.OK }); // Set status before ending
+   ```
+
+### Spans Not Nested Properly
+
+Use `startActiveSpan` instead of `startSpan` for automatic context propagation:
+
+```javascript
+// ✅ Good: Automatic context propagation
+await tracer.startActiveSpan('parent', async (parent) => {
+    await tracer.startActiveSpan('child', async (child) => {
+        // child automatically nested under parent
+        child.end();
+    });
+    parent.end();
+});
+
+// ❌ Bad: Manual context management required
+const parent = tracer.startSpan('parent');
+const child = tracer.startSpan('child', { parent }); // Must explicitly set parent
+```
+
+## Next Steps
+
+- **Add metrics**: Implement custom metrics with `@opentelemetry/api-metrics`
+- **Log correlation**: Add trace context to application logs
+- **Deploy to Docker**: See [Docker example](../../../docker/manual-instrumentation/express/)
+- **Deploy to Kubernetes**: See [Kubernetes example](../../../kubernetes/manual-instrumentation/express/)
+
+## Resources
+
+- [OpenTelemetry Node.js Documentation](https://opentelemetry.io/docs/languages/js/)
+- [OpenTelemetry API Reference](https://open-telemetry.github.io/opentelemetry-js-api/)
+- [Span API](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/_opentelemetry_api.Span.html)
+- [Tracer API](https://open-telemetry.github.io/opentelemetry-js-api/interfaces/_opentelemetry_api.Tracer.html)
+- [Sematext Agent Documentation](https://sematext.com/docs/agents/sematext-agent/opentelemetry/)
