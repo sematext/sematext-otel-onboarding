@@ -28,11 +28,9 @@ This repository provides practical examples of how to instrument applications wi
 
 ## Telemetry Data
 
-- **Traces** ✅ - Distributed tracing shows request flow across services
-- **Metrics** ✅ - Application and infrastructure metrics (latency, throughput, errors)
+- **Traces** - Distributed tracing shows request flow across services
+- **Metrics** - Application and infrastructure metrics (latency, throughput, errors)
 - **Logs** - Application logs correlated with traces
-  - ❌ Not available with auto-instrumentation
-  - ✅ Available with manual instrumentation
 
 ## Sematext Cloud
 
