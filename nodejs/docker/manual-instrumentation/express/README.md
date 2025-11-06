@@ -105,6 +105,73 @@ try {
 }
 ```
 
+## Creating Custom Metrics
+
+Manual instrumentation allows creating custom metrics:
+
+```javascript
+const { metrics } = require('@opentelemetry/api');
+const meter = metrics.getMeter('my-app', '1.0.0');
+
+// Counter - total requests
+const requestCounter = meter.createCounter('http.server.requests', {
+    description: 'Total number of HTTP requests',
+    unit: '1'
+});
+requestCounter.add(1, { endpoint: '/', method: 'GET' });
+
+// Histogram - request duration
+const requestDuration = meter.createHistogram('http.server.duration', {
+    description: 'HTTP request duration',
+    unit: 'ms'
+});
+requestDuration.record(duration, { endpoint: '/', method: 'GET' });
+
+// UpDownCounter - active requests
+const activeRequests = meter.createUpDownCounter('http.server.active_requests', {
+    description: 'Number of active HTTP requests',
+    unit: '1'
+});
+activeRequests.add(1);  // increment
+activeRequests.add(-1); // decrement
+```
+
+## Creating Custom Logs
+
+Manual instrumentation enables structured logs with trace correlation:
+
+```javascript
+const { logs } = require('@opentelemetry/api-logs');
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { trace } = require('@opentelemetry/api');
+
+const logger = logs.getLogger('my-app', '1.0.0');
+
+function emitLog(severityText, body, attributes = {}) {
+    const activeSpan = trace.getActiveSpan();
+    const logAttributes = { ...attributes };
+
+    // Add trace correlation
+    if (activeSpan) {
+        const spanContext = activeSpan.spanContext();
+        logAttributes['trace_id'] = spanContext.traceId;
+        logAttributes['span_id'] = spanContext.spanId;
+    }
+
+    logger.emit({
+        severityNumber: SeverityNumber.INFO,
+        severityText: severityText.toUpperCase(),
+        body: body,
+        attributes: logAttributes,
+        timestamp: Date.now()
+    });
+}
+
+// Usage
+emitLog('info', 'Request processed', { 'user.id': userId });
+emitLog('error', 'Failed to process request', { 'error.type': 'ValidationError' });
+```
+
 ## Docker Configuration
 
 Same Docker setup as auto-instrumentation example, but with manual span creation in application code.

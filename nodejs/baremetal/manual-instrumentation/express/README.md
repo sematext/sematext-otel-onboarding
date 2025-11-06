@@ -253,6 +253,125 @@ await tracer.startActiveSpan('process.user.data', async (processSpan) => {
 });
 ```
 
+## Creating Custom Metrics
+
+Manual instrumentation allows creating custom metrics for your application:
+
+### Counter Metric
+
+```javascript
+const { metrics } = require('@opentelemetry/api');
+const meter = metrics.getMeter('my-app', '1.0.0');
+
+// Create counter
+const requestCounter = meter.createCounter('http.server.requests', {
+    description: 'Total number of HTTP requests',
+    unit: '1'
+});
+
+// Increment counter
+requestCounter.add(1, { endpoint: '/', method: 'GET' });
+```
+
+### Histogram Metric
+
+```javascript
+// Create histogram for duration tracking
+const requestDuration = meter.createHistogram('http.server.duration', {
+    description: 'HTTP request duration',
+    unit: 'ms'
+});
+
+// Record value
+const duration = Date.now() - startTime;
+requestDuration.record(duration, { endpoint: '/', method: 'GET' });
+```
+
+### UpDownCounter Metric
+
+```javascript
+// Create up/down counter for active connections
+const activeRequests = meter.createUpDownCounter('http.server.active_requests', {
+    description: 'Number of active HTTP requests',
+    unit: '1'
+});
+
+// Increment
+activeRequests.add(1, { endpoint: '/' });
+
+// Decrement
+activeRequests.add(-1, { endpoint: '/' });
+```
+
+## Creating Custom Logs
+
+Manual instrumentation enables structured logs with automatic trace correlation:
+
+### Basic Log Emission
+
+```javascript
+const { logs } = require('@opentelemetry/api-logs');
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+
+const logger = logs.getLogger('my-app', '1.0.0');
+
+logger.emit({
+    severityNumber: SeverityNumber.INFO,
+    severityText: 'INFO',
+    body: 'Request processed successfully',
+    attributes: {
+        'endpoint': '/',
+        'user.id': '123'
+    },
+    timestamp: Date.now()
+});
+```
+
+### Logs with Trace Correlation
+
+```javascript
+const { trace } = require('@opentelemetry/api');
+
+function emitLog(severityText, body, attributes = {}) {
+    const activeSpan = trace.getActiveSpan();
+    const logAttributes = { ...attributes };
+
+    // Automatically add trace correlation
+    if (activeSpan) {
+        const spanContext = activeSpan.spanContext();
+        logAttributes['trace_id'] = spanContext.traceId;
+        logAttributes['span_id'] = spanContext.spanId;
+        logAttributes['trace_flags'] = spanContext.traceFlags;
+    }
+
+    logger.emit({
+        severityNumber: getSeverityNumber(severityText),
+        severityText: severityText.toUpperCase(),
+        body: body,
+        attributes: logAttributes,
+        timestamp: Date.now()
+    });
+}
+
+// Usage
+emitLog('info', 'Processing user request', { 'user.id': userId });
+emitLog('error', 'Failed to process request', { 'error.type': 'ValidationError' });
+```
+
+### Severity Levels
+
+```javascript
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+
+// Available severity levels:
+SeverityNumber.TRACE   // Detailed trace information
+SeverityNumber.DEBUG   // Debug information
+SeverityNumber.INFO    // Informational messages
+SeverityNumber.WARN    // Warning messages
+SeverityNumber.ERROR   // Error messages
+SeverityNumber.FATAL   // Fatal error messages
+```
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
