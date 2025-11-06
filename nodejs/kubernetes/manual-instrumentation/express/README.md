@@ -66,38 +66,78 @@ kubectl port-forward svc/nodejs-express-manual 8080:80
 curl http://localhost:8080/users/123
 ```
 
-## Manual Instrumentation Benefits
+## Creating Custom Spans
 
-This example demonstrates **manual instrumentation** capabilities:
+Manual instrumentation provides full control over span creation:
 
-### Custom Nested Spans
+### Simple Span
 
-The application creates explicit parent-child span relationships:
-
-**Example from `/users/:id` endpoint:**
-```
-get-user-operation (parent)
-├── database.lookup (child)
-└── process.user.data (child)
-```
-
-### Rich Span Attributes
-
-Manual spans include domain-specific attributes:
-- `db.system`: Database type
-- `db.operation`: SQL operation
-- `db.table`: Table name
-- `user.id`: Business entity ID
-
-### Error Tracking
-
-Detailed error context with manual exception recording:
 ```javascript
-span.recordException(error);
-span.setStatus({
-    code: SpanStatusCode.ERROR,
-    message: error.message
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+const tracer = trace.getTracer('my-app', '1.0.0');
+
+const span = tracer.startSpan('my-operation');
+span.setAttribute('key', 'value');
+span.setStatus({ code: SpanStatusCode.OK });
+span.end();
+```
+
+### Active Span with Context Propagation
+
+```javascript
+await tracer.startActiveSpan('my-operation', async (span) => {
+    span.setAttribute('key', 'value');
+
+    // Child spans automatically inherit context
+    await someAsyncOperation();
+
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
 });
+```
+
+### Nested Spans
+
+```javascript
+await tracer.startActiveSpan('get-user-operation', async (parentSpan) => {
+    parentSpan.setAttribute('user.id', userId);
+
+    // Database lookup span
+    await tracer.startActiveSpan('database.lookup', async (dbSpan) => {
+        dbSpan.setAttributes({
+            'db.system': 'postgresql',
+            'db.operation': 'SELECT',
+            'db.table': 'users'
+        });
+        dbSpan.setStatus({ code: SpanStatusCode.OK });
+        dbSpan.end();
+    });
+
+    // Processing span
+    await tracer.startActiveSpan('process.user.data', async (processSpan) => {
+        processSpan.setAttribute('operation', 'transform');
+        processSpan.setStatus({ code: SpanStatusCode.OK });
+        processSpan.end();
+    });
+
+    parentSpan.setStatus({ code: SpanStatusCode.OK });
+    parentSpan.end();
+});
+```
+
+### Error Handling
+
+```javascript
+try {
+    // Your code
+} catch (error) {
+    span.recordException(error);
+    span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+    });
+    span.end();
+}
 ```
 
 ## Creating Custom Metrics

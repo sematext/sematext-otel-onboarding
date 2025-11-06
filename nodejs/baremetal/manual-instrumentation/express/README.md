@@ -122,43 +122,24 @@ curl http://localhost:8080/error
 2. **Metrics**: Open your Sematext Monitoring App to see HTTP metrics
 3. **Logs**: Open your Sematext Logs App to see console logs
 
-## How Manual Instrumentation Works
+## Creating Custom Spans
 
-### Explicit SDK Configuration
+Manual instrumentation provides full control over span creation:
 
-Manual instrumentation requires explicit setup of each instrumentation library:
+### Simple Span
 
 ```javascript
-const sdk = new NodeSDK({
-    resource,
-    traceExporter,
-    instrumentations: [
-        new HttpInstrumentation({
-            requestHook: (span, request) => {
-                span.setAttribute('custom.http.instrumentation', 'manual');
-            },
-        }),
-        new ExpressInstrumentation({
-            requestHook: (span, request) => {
-                span.setAttribute('custom.express.instrumentation', 'manual');
-            },
-        }),
-    ],
-});
-```
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+const tracer = trace.getTracer('my-app', '1.0.0');
 
-### Creating Custom Spans
-
-The main advantage of manual instrumentation is full control over span creation:
-
-**Simple Span:**
-```javascript
 const span = tracer.startSpan('my-operation');
 span.setAttribute('key', 'value');
+span.setStatus({ code: SpanStatusCode.OK });
 span.end();
 ```
 
-**Active Span (Automatic Context Propagation):**
+### Active Span with Context Propagation
+
 ```javascript
 await tracer.startActiveSpan('my-operation', async (span) => {
     span.setAttribute('key', 'value');
@@ -171,13 +152,14 @@ await tracer.startActiveSpan('my-operation', async (span) => {
 });
 ```
 
-**Nested Spans:**
+### Nested Spans
+
 ```javascript
 await tracer.startActiveSpan('parent-operation', async (parentSpan) => {
-    // Parent span logic
+    parentSpan.setAttribute('parent.attr', 'value');
 
     await tracer.startActiveSpan('child-operation', async (childSpan) => {
-        // Child span logic
+        childSpan.setAttribute('child.attr', 'value');
         childSpan.setStatus({ code: SpanStatusCode.OK });
         childSpan.end();
     });
@@ -186,36 +168,6 @@ await tracer.startActiveSpan('parent-operation', async (parentSpan) => {
     parentSpan.end();
 });
 ```
-
-### Error Handling
-
-Manual error tracking provides detailed error context:
-
-```javascript
-try {
-    // Your code
-} catch (error) {
-    span.recordException(error);
-    span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error.message
-    });
-    span.end();
-}
-```
-
-## Application Endpoints
-
-| Endpoint | Method | Description | Span Details |
-|----------|--------|-------------|--------------|
-| `/` | GET | Root endpoint | Single manual span |
-| `/users/:id` | GET | Get user by ID | Nested spans (parent, db, processing) |
-| `/slow` | GET | Slow endpoint | Multiple sequential spans |
-| `/error` | GET | Error endpoint | Error tracking and exception recording |
-| `/health` | GET | Health check | No custom spans |
-| `/ready` | GET | Readiness check | No custom spans |
-
-## Custom Span Examples
 
 ### Database Query Span
 
@@ -228,7 +180,6 @@ await tracer.startActiveSpan('database.lookup', async (dbSpan) => {
         'user.id': userId
     });
 
-    // Execute query
     const result = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
 
     dbSpan.setStatus({ code: SpanStatusCode.OK });
@@ -245,12 +196,26 @@ await tracer.startActiveSpan('process.user.data', async (processSpan) => {
         'user.id': userId
     });
 
-    // Business logic here
     const processed = transformUserData(data);
 
     processSpan.setStatus({ code: SpanStatusCode.OK });
     processSpan.end();
 });
+```
+
+### Error Handling
+
+```javascript
+try {
+    // Your code
+} catch (error) {
+    span.recordException(error);
+    span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+    });
+    span.end();
+}
 ```
 
 ## Creating Custom Metrics

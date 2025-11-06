@@ -55,46 +55,69 @@ curl http://localhost:8080/error
 
 Check your Sematext Tracing, Monitoring, and Logs Apps for telemetry data.
 
-## Key Differences from Auto-Instrumentation
+## Creating Custom Spans
 
-This example demonstrates **manual instrumentation**, which provides:
+Manual instrumentation provides full control over span creation:
 
-1. **Explicit Span Creation**: Full control over when and how spans are created
-2. **Custom Nested Spans**: Create parent-child span relationships
-3. **Rich Span Attributes**: Add domain-specific context
-4. **Selective Instrumentation**: Only instrument what matters
+### Simple Span
 
-## Manual Instrumentation Highlights
+```javascript
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+const tracer = trace.getTracer('my-app', '1.0.0');
 
-### Custom Nested Spans
+const span = tracer.startSpan('my-operation');
+span.setAttribute('key', 'value');
+span.setStatus({ code: SpanStatusCode.OK });
+span.end();
+```
 
-The `/users/:id` endpoint creates nested spans:
+### Active Span with Context Propagation
+
+```javascript
+await tracer.startActiveSpan('my-operation', async (span) => {
+    span.setAttribute('key', 'value');
+
+    // Child spans automatically inherit context
+    await someAsyncOperation();
+
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
+});
+```
+
+### Nested Spans
 
 ```javascript
 await tracer.startActiveSpan('get-user-operation', async (parentSpan) => {
+    parentSpan.setAttribute('user.id', userId);
+
     // Database lookup span
     await tracer.startActiveSpan('database.lookup', async (dbSpan) => {
-        // ... db logic ...
+        dbSpan.setAttributes({
+            'db.system': 'postgresql',
+            'db.operation': 'SELECT'
+        });
+        dbSpan.setStatus({ code: SpanStatusCode.OK });
         dbSpan.end();
     });
 
     // Processing span
     await tracer.startActiveSpan('process.user.data', async (processSpan) => {
-        // ... processing logic ...
+        processSpan.setAttribute('operation', 'transform');
+        processSpan.setStatus({ code: SpanStatusCode.OK });
         processSpan.end();
     });
 
+    parentSpan.setStatus({ code: SpanStatusCode.OK });
     parentSpan.end();
 });
 ```
 
-### Error Tracking
-
-Manual error handling with detailed context:
+### Error Handling
 
 ```javascript
 try {
-    throw new Error('Test error');
+    // Your code
 } catch (error) {
     span.recordException(error);
     span.setStatus({
