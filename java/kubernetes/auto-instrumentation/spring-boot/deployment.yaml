@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-spring-boot-auto
+  labels:
+    app: java-spring-boot-auto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-spring-boot-auto
+  template:
+    metadata:
+      labels:
+        app: java-spring-boot-auto
+    spec:
+      containers:
+      - name: java-spring-boot-auto
+        image: java-spring-boot-auto:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # OpenTelemetry configuration
+        - name: OTEL_SERVICE_NAME
+          value: "java-spring-boot-auto"
+        - name: OTEL_SERVICE_VERSION
+          value: "1.0.0"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4338/v1/traces"
+        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318/v1/metrics"
+        - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4328/v1/logs"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+
+        # Capture Kubernetes metadata
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=$(K8S_NAMESPACE),k8s.pod.name=$(K8S_POD_NAME)"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 50
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-spring-boot-auto
+  labels:
+    app: java-spring-boot-auto
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: java-spring-boot-auto
