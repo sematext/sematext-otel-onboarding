@@ -116,18 +116,6 @@ public class DemoController {
 }
 ```
 
-### Configuration via Environment Variables
-
-All configuration is done through environment variables in `deployment.yaml`:
-
-```yaml
-env:
-- name: OTEL_SERVICE_NAME
-  value: "java-spring-boot-auto"
-- name: OTEL_EXPORTER_OTLP_ENDPOINT
-  value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318"
-```
-
 ## Kubernetes Configuration
 
 ### Deployment Manifest
