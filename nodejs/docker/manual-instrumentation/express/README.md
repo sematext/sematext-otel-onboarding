@@ -22,19 +22,31 @@ This example demonstrates manual OpenTelemetry instrumentation for a Node.js Exp
 
 Edit `docker-compose.yaml` and update:
 
+**Infrastructure Token** - Replace with your Sematext Infrastructure token:
+```yaml
+- INFRA_TOKEN=your-infra-token
+```
+
 **Region** - Set based on your Sematext Cloud region:
 ```yaml
 - REGION=US  # US for Sematext Cloud US, EU for Sematext Cloud EU
 ```
 
-**Tokens** - Replace with your actual Sematext App tokens:
+**App Tokens** - Replace with your actual Sematext App tokens:
 ```yaml
 - OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
 - OTEL_NODEJS_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
 - OTEL_NODEJS_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+- OTEL_NODEJS_APP_TOKEN_GROUP_SERVICES=nodejs-express-manual
 ```
 
 Get your tokens from each App in Sematext Cloud.
+
+**Note**: Metrics are commented out by default. To enable metrics, uncomment:
+```yaml
+- OTEL_METRICS_ENABLED=true
+- OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+```
 
 ### 2. Start the Stack
 

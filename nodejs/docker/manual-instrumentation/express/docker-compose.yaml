@@ -2,23 +2,39 @@ version: '3.8'
 
 services:
   sematext-agent:
-    image: sematext/agent:latest
+    image: sematext/agent:latest-4
+    privileged: true
     environment:
+      # Infrastructure token (replace with your token)
+      - INFRA_TOKEN=your-infra-token
+
       # Region: US for Sematext Cloud US, EU for Sematext Cloud EU
       - REGION=US
 
       # Enable OpenTelemetry
       - OTEL_ENABLED=true
-      - OTEL_METRICS_ENABLED=true
+      #- OTEL_METRICS_ENABLED=true
       - OTEL_LOGS_ENABLED=true
       - OTEL_TRACES_ENABLED=true
 
       # Token configuration (replace with your tokens)
-      - OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+      #- OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
       - OTEL_NODEJS_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
       - OTEL_NODEJS_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
       - OTEL_NODEJS_APP_TOKEN_GROUP_SERVICES=nodejs-express-manual
 
+    cap_add:
+      - SYS_ADMIN
+    restart: always
+    volumes:
+      - /:/hostfs:ro,rslave
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      - /var/run/:/var/run
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys:/host/sys:ro
+      - /dev:/hostfs/dev:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "4317:4317"  # Metrics gRPC
       - "4318:4318"  # Metrics HTTP
@@ -26,7 +42,6 @@ services:
       - "4328:4328"  # Logs HTTP
       - "4337:4337"  # Traces gRPC
       - "4338:4338"  # Traces HTTP
-    restart: unless-stopped
 
   nodejs-app:
     build: .
