@@ -211,7 +211,7 @@ emitLog('error', 'Failed to process request', { 'error.type': 'ValidationError' 
 
 Same Kubernetes setup as auto-instrumentation, but with manual span creation in application code.
 
-See [Auto-Instrumentation K8s README](../auto-instrumentation/express/README.md) for detailed Kubernetes configuration.
+See [Auto-Instrumentation K8s README](../../auto-instrumentation/express/README.md) for detailed Kubernetes configuration.
 
 ## Viewing Custom Spans in Sematext
 
@@ -243,7 +243,7 @@ Manual instrumentation provides deeper insights into application logic.
 
 ## Common Tasks
 
-Same as auto-instrumentation example. See [Auto-Instrumentation K8s README](../auto-instrumentation/express/README.md).
+Same as auto-instrumentation example. See [Auto-Instrumentation K8s README](../../auto-instrumentation/express/README.md).
 
 ## Troubleshooting
 
@@ -280,7 +280,7 @@ Same as auto-instrumentation:
 - Implement health probes
 - Use HorizontalPodAutoscaler
 
-See [Auto-Instrumentation K8s README](../auto-instrumentation/express/README.md) for details.
+See [Auto-Instrumentation K8s README](../../auto-instrumentation/express/README.md) for details.
 
 ## Next Steps
 
