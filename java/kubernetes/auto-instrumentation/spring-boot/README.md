@@ -36,10 +36,10 @@ helm install sematext-agent sematext/sematext-agent \
   --set otel.traces.enabled=true \
   --set otel.metrics.enabled=true \
   --set otel.logs.enabled=true \
-  --set otel.services.java-spring-boot-auto=java-group \
-  --set otel.token-groups.java-group.monitoring-token=your-monitoring-token \
-  --set otel.token-groups.java-group.traces-token=your-traces-token \
-  --set otel.token-groups.java-group.logs-token=your-logs-token
+  --set otel.services.java-spring-k8s-auto=java-auto-group \
+  --set otel.token-groups.java-auto-group.traces-token=your-traces-token \
+  --set otel.token-groups.java-auto-group.logs-token=your-logs-token \
+  --set otel.token-groups.java-auto-group.monitoring-token=your-monitoring-token
 ```
 
 **Note**: Use `region=US` for Sematext Cloud US or `region=EU` for Sematext Cloud EU.
@@ -47,10 +47,15 @@ helm install sematext-agent sematext/sematext-agent \
 ### 2. Build Docker Image Locally
 
 ```bash
-docker build -t java-spring-boot-auto:latest .
+docker build -t java-spring-k8s-auto:latest .
 ```
 
-The deployment.yaml is already configured to use `java-spring-boot-auto:latest` with `imagePullPolicy: IfNotPresent`, which will use your local image.
+The deployment.yaml is already configured to use `java-spring-k8s-auto:latest` with `imagePullPolicy: IfNotPresent`, which will use your local image.
+
+**For Minikube users:** Load the image into Minikube's Docker daemon:
+```bash
+minikube image load java-spring-k8s-auto:latest
+```
 
 ### 3. Deploy Application
 
@@ -62,17 +67,17 @@ kubectl apply -f deployment.yaml
 
 ```bash
 # Check pod status
-kubectl get pods -l app=java-spring-boot-auto
+kubectl get pods -l app=java-spring-k8s-auto
 
 # Check logs
-kubectl logs -l app=java-spring-boot-auto -f
+kubectl logs -l app=java-spring-k8s-auto -f
 ```
 
 ### 5. Test the Application
 
 ```bash
 # Port-forward to access locally
-kubectl port-forward svc/java-spring-boot-auto 8080:80
+kubectl port-forward svc/java-spring-k8s-auto 8080:80
 
 # Generate traffic
 curl http://localhost:8080/
@@ -126,7 +131,7 @@ The `deployment.yaml` includes:
 ```yaml
 env:
 - name: OTEL_SERVICE_NAME
-  value: "java-spring-boot-auto"
+  value: "java-spring-k8s-auto"
 - name: OTEL_EXPORTER_OTLP_PROTOCOL
   value: "http/protobuf"
 - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -184,23 +189,26 @@ readinessProbe:
 ### View Logs
 
 ```bash
-kubectl logs -l app=java-spring-boot-auto -f
+kubectl logs -l app=java-spring-k8s-auto -f
 ```
 
 ### Scale Deployment
 
 ```bash
-kubectl scale deployment java-spring-boot-auto --replicas=3
+kubectl scale deployment java-spring-k8s-auto --replicas=3
 ```
 
 ### Update Application
 
 ```bash
 # Rebuild image
-docker build -t java-spring-boot-auto:latest .
+docker build -t java-spring-k8s-auto:latest .
+
+# For Minikube: Load image
+minikube image load java-spring-k8s-auto:latest
 
 # Restart deployment
-kubectl rollout restart deployment/java-spring-boot-auto
+kubectl rollout restart deployment/java-spring-k8s-auto
 ```
 
 ### Delete Deployment
@@ -215,7 +223,7 @@ kubectl delete -f deployment.yaml
 
 ```bash
 # Check pod status
-kubectl describe pod -l app=java-spring-boot-auto
+kubectl describe pod -l app=java-spring-k8s-auto
 
 # Check events
 kubectl get events --sort-by='.lastTimestamp'
@@ -242,7 +250,7 @@ kubectl get events --sort-by='.lastTimestamp'
 
 Check container logs for agent initialization:
 ```bash
-kubectl logs -l app=java-spring-boot-auto | grep -i "opentelemetry"
+kubectl logs -l app=java-spring-k8s-auto | grep -i "opentelemetry"
 ```
 
 You should see:
