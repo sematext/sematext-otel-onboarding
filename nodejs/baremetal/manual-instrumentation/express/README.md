@@ -52,28 +52,38 @@ sudo systemctl status sematext-agent
 
 ### 4. Configure Sematext Agent
 
-**Enable OpenTelemetry:**
+**Enable OpenTelemetry with traces, metrics, and logs:**
 
 ```bash
-sudo /opt/spm/spm-monitor/bin/st-agent otel enable
-```
+# Enable all signals at once
+sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type all
 
-**Enable traces, metrics, and logs:**
-
-```bash
-sudo /opt/spm/spm-monitor/bin/st-agent otel traces enable
-sudo /opt/spm/spm-monitor/bin/st-agent otel metrics enable
-sudo /opt/spm/spm-monitor/bin/st-agent otel logs enable
+# Or enable individually
+sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type traces
+sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type metrics
+sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type logs
 ```
 
 **Configure token group with your Sematext App tokens:**
 
 ```bash
+# Add traces token
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --name "my-token-group" \
-  --monitoring-token "YOUR_MONITORING_TOKEN" \
-  --traces-token "YOUR_TRACES_TOKEN" \
-  --logs-token "YOUR_LOGS_TOKEN"
+  --token-group "my-token-group" \
+  --type traces \
+  --token "YOUR_TRACES_TOKEN"
+
+# Add logs token
+sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
+  --token-group "my-token-group" \
+  --type logs \
+  --token "YOUR_LOGS_TOKEN"
+
+# Add metrics token (optional)
+sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
+  --token-group "my-token-group" \
+  --type metrics \
+  --token "YOUR_MONITORING_TOKEN"
 ```
 
 Get your tokens from each App in Sematext Cloud.
