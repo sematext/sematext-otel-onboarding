@@ -24,7 +24,7 @@ RUN apt-get update && \
 # Download and extract OpenTelemetry .NET automatic instrumentation
 RUN OTEL_VERSION=v1.12.0 && \
     curl -L -o otel-dotnet-auto.zip \
-    https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc.zip && \
+    https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && \
     unzip otel-dotnet-auto.zip -d /otel && \
     rm otel-dotnet-auto.zip
 
