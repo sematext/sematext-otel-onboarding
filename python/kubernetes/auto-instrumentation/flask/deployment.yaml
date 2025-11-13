@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-flask-k8s-auto
+  labels:
+    app: python-flask-k8s-auto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-flask-k8s-auto
+  template:
+    metadata:
+      labels:
+        app: python-flask-k8s-auto
+    spec:
+      containers:
+      - name: python-flask-k8s-auto
+        image: python-flask-k8s-auto:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # OpenTelemetry Service Configuration
+        - name: OTEL_SERVICE_NAME
+          value: "python-flask-k8s-auto"
+        - name: OTEL_SERVICE_VERSION
+          value: "1.0.0"
+
+        # Kubernetes metadata (capture namespace for resource attributes)
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=$(K8S_NAMESPACE),k8s.pod.name=$(K8S_POD_NAME)"
+
+        # OpenTelemetry Exporter Configuration
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4338"
+        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+
+        # Application Configuration
+        - name: PORT
+          value: "8080"
+
+        # Resource Limits
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Health Checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Security Context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-flask-k8s-auto
+  labels:
+    app: python-flask-k8s-auto
+spec:
+  type: ClusterIP
+  selector:
+    app: python-flask-k8s-auto
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
