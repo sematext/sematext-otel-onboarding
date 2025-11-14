@@ -22,7 +22,7 @@ public static class OpenTelemetryConfig
         var metricsEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
             ?? "http://localhost:4318";
         var logsEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT")
-            ?? "http://localhost:4328";
+            ?? "http://localhost:4328/v1/logs";
 
         // Create resource with service information
         var resourceBuilder = ResourceBuilder.CreateDefault()
@@ -36,7 +36,7 @@ public static class OpenTelemetryConfig
             });
         }
 
-        // Configure OpenTelemetry with manual instrumentation
+        // Configure OpenTelemetry with manual instrumentation (unified configuration)
         services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
@@ -79,23 +79,22 @@ public static class OpenTelemetryConfig
                         options.Endpoint = new Uri(metricsEndpoint);
                         options.Protocol = OtlpExportProtocol.HttpProtobuf;
                     });
-            });
-
-        // Configure logging to export to OTLP
-        services.AddLogging(logging =>
-        {
-            logging.AddOpenTelemetry(options =>
+            })
+            .WithLogging(logging =>
             {
-                options.SetResourceBuilder(resourceBuilder);
-                options.IncludeFormattedMessage = true;
-                options.IncludeScopes = true;
-                options.ParseStateValues = true;
-                options.AddOtlpExporter(otlpOptions =>
+                logging.AddOtlpExporter(options =>
                 {
-                    otlpOptions.Endpoint = new Uri(logsEndpoint);
-                    otlpOptions.Protocol = OtlpExportProtocol.HttpProtobuf;
+                    options.Endpoint = new Uri(logsEndpoint);
+                    options.Protocol = OtlpExportProtocol.HttpProtobuf;
                 });
             });
+
+        // Configure additional logging options
+        services.Configure<OpenTelemetryLoggerOptions>(options =>
+        {
+            options.IncludeFormattedMessage = true;
+            options.IncludeScopes = true;
+            options.ParseStateValues = true;
         });
 
         Console.WriteLine("=== OpenTelemetry Manual Instrumentation Configured ===");

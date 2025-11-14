@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using OpenTelemetry.Trace;
 
 namespace DotnetApp.Controllers;
 
@@ -132,7 +133,7 @@ public class DemoController : ControllerBase
         {
             // Record exception in span
             parentActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            parentActivity?.RecordException(ex);
+            parentActivity?.AddException(ex);
 
             _logger.LogError(ex, "Error fetching user: {ErrorMessage}", ex.Message);
 
@@ -201,7 +202,7 @@ public class DemoController : ControllerBase
         {
             // Manually record exception
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            activity?.RecordException(ex);
+            activity?.AddException(ex);
 
             _logger.LogError(ex, "Intentional error thrown: {ErrorMessage}", ex.Message);
 

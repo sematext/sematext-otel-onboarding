@@ -9,14 +9,8 @@ OpenTelemetryConfig.Configure(builder.Services);
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 
-// Configure logging
-builder.Logging.ClearProviders();
+// Configure console logging
 builder.Logging.AddConsole();
-builder.Logging.AddOpenTelemetry(logging =>
-{
-    logging.IncludeFormattedMessage = true;
-    logging.IncludeScopes = true;
-});
 
 var app = builder.Build();
 

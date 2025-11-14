@@ -40,7 +40,7 @@ spec:
         - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
           value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318"
         - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
-          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4328"
+          value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4328/v1/logs"
         - name: OTEL_EXPORTER_OTLP_PROTOCOL
           value: "http/protobuf"
 
