@@ -17,9 +17,9 @@ services:
       - OTEL_TRACES_ENABLED=true
 
       # Token configuration (replace with your tokens)
-      #- OTEL_PYTHON_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
-      - OTEL_PYTHON_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-      - OTEL_PYTHON_APP_TOKEN_GROUP_SERVICES=python-flask-docker-auto
+      #- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+      - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+      - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 
     cap_add:
       - SYS_ADMIN

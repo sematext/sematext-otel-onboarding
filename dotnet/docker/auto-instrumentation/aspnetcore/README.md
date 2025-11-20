@@ -34,8 +34,8 @@ Edit `docker-compose.yaml` and update:
 
 **App Tokens** - Replace with your actual Sematext App tokens:
 ```yaml
-- OTEL_DOTNET_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-- OTEL_DOTNET_APP_TOKEN_GROUP_SERVICES=dotnet-aspnetcore-docker-auto
+- OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+- OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 ```
 
 Get your tokens from each App in Sematext Cloud.

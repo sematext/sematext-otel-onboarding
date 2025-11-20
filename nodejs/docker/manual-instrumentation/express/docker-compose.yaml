@@ -18,10 +18,10 @@ services:
       - OTEL_TRACES_ENABLED=true
 
       # Token configuration (replace with your tokens)
-      #- OTEL_NODEJS_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
-      - OTEL_NODEJS_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
-      - OTEL_NODEJS_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-      - OTEL_NODEJS_APP_TOKEN_GROUP_SERVICES=nodejs-express-manual
+      #- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+      - OTEL_MY_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
+      - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+      - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 
     cap_add:
       - SYS_ADMIN

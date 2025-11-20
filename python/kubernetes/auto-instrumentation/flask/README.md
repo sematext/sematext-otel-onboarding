@@ -39,9 +39,9 @@ helm install sematext-agent sematext/sematext-agent \
   --set region=US \
   --set otel.enabled=true \
   --set otel.traces.enabled=true \
-  --set otel.services.python-flask-k8s-auto=python-group \
-  --set otel.token-groups.python-group.monitoring-token=your-monitoring-token \
-  --set otel.token-groups.python-group.traces-token=your-traces-token
+  --set otel.services.all-services=my-token-group \
+  --set otel.token-groups.my-token-group.monitoring-token=your-monitoring-token \
+  --set otel.token-groups.my-token-group.traces-token=your-traces-token
 ```
 
 **Note**: Use `region=US` for Sematext Cloud US or `region=EU` for Sematext Cloud EU.

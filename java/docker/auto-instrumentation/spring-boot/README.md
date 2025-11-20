@@ -34,10 +34,10 @@ Edit `docker-compose.yaml` and update:
 
 **App Tokens** - Replace with your actual Sematext App tokens:
 ```yaml
-- OTEL_JAVA_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
-- OTEL_JAVA_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
-- OTEL_JAVA_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-- OTEL_JAVA_APP_TOKEN_GROUP_SERVICES=java-spring-docker-auto
+- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+- OTEL_MY_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
+- OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+- OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 ```
 
 Get your tokens from each App in Sematext Cloud.
@@ -45,7 +45,7 @@ Get your tokens from each App in Sematext Cloud.
 **Note**: Metrics are commented out by default. To enable metrics, uncomment:
 ```yaml
 - OTEL_METRICS_ENABLED=true
-- OTEL_JAVA_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
 ```
 
 ### 2. Start the Stack
@@ -170,9 +170,9 @@ sematext-agent:
     - OTEL_ENABLED=true
     - OTEL_LOGS_ENABLED=true
     - OTEL_TRACES_ENABLED=true
-    - OTEL_JAVA_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
-    - OTEL_JAVA_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-    - OTEL_JAVA_APP_TOKEN_GROUP_SERVICES=java-spring-docker-auto
+    - OTEL_MY_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
+    - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+    - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
   cap_add:
     - SYS_ADMIN
   volumes:
@@ -301,7 +301,7 @@ docker-compose logs java-app | grep -i "opentelemetry"
 
 1. **Check service name matches token group**:
    - Service name in docker-compose: `java-spring-boot-auto`
-   - Token group in agent config: `OTEL_JAVA_SPRING_BOOT_AUTO_TOKEN_GROUP_*`
+   - Token group in agent config: `OTEL_MY_TOKEN_GROUP_*`
 
 2. **Verify token configuration**:
    Ensure all three tokens are set correctly in docker-compose.yaml

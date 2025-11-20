@@ -17,11 +17,11 @@ services:
       - OTEL_LOGS_ENABLED=true
       - OTEL_TRACES_ENABLED=true
 
-      # Token configuration
-      #- OTEL_JAVA_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
-      - OTEL_JAVA_APP_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
-      - OTEL_JAVA_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-      - OTEL_JAVA_APP_TOKEN_GROUP_SERVICES=java-spring-docker-manual
+      # Token configuration (replace with your tokens)
+      #- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+      - OTEL_MY_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
+      - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+      - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 
     cap_add:
       - SYS_ADMIN

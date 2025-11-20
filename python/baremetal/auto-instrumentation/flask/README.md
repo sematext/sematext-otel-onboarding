@@ -73,13 +73,13 @@ sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type metrics
 ```bash
 # Add traces token
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --token-group "python-token-group" \
+  --token-group "my-token-group" \
   --type traces \
   --token "YOUR_TRACES_TOKEN"
 
 # Add metrics token (optional)
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --token-group "python-token-group" \
+  --token-group "my-token-group" \
   --type metrics \
   --token "YOUR_MONITORING_TOKEN"
 ```
@@ -90,8 +90,8 @@ Get your tokens from each App in Sematext Cloud.
 
 ```bash
 sudo /opt/spm/spm-monitor/bin/st-agent otel services add \
-  --service-names "python-flask-baremetal-auto" \
-  --token-group "python-token-group"
+  --all-services \
+  --token-group "my-token-group"
 ```
 
 **Restart the agent:**

@@ -34,9 +34,9 @@ Edit `docker-compose.yaml` and update:
 
 **App Tokens** - Replace with your actual Sematext App tokens:
 ```yaml
-- OTEL_PYTHON_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
-- OTEL_PYTHON_APP_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-- OTEL_PYTHON_APP_TOKEN_GROUP_SERVICES=python-flask-docker-auto
+- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+- OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+- OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
 ```
 
 Get your tokens from each App in Sematext Cloud.
@@ -44,7 +44,7 @@ Get your tokens from each App in Sematext Cloud.
 **Note**: Metrics are commented out by default. To enable metrics, uncomment:
 ```yaml
 - OTEL_METRICS_ENABLED=true
-- OTEL_PYTHON_APP_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
 ```
 
 ### 2. Start the Stack
@@ -148,7 +148,7 @@ sematext-agent:
   image: sematext/agent:latest-4
   environment:
     - OTEL_ENABLED=true
-    - OTEL_PYTHON_APP_TOKEN_GROUP_SERVICES=python-flask-docker-auto
+    - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
   ports:
     - "4317:4317"  # Metrics gRPC
     - "4318:4318"  # Metrics HTTP
@@ -235,7 +235,7 @@ docker-compose up -d
 | `OTEL_ENABLED` | `true` | Enable OpenTelemetry |
 | `OTEL_METRICS_ENABLED` | `true` | Enable metrics (port 4318) |
 | `OTEL_TRACES_ENABLED` | `true` | Enable traces (port 4338) |
-| `OTEL_PYTHON_APP_TOKEN_GROUP_*` | Token values | Sematext App tokens |
+| `OTEL_MY_TOKEN_GROUP_*` | Token values | Sematext App tokens |
 
 ## Common Tasks
 
@@ -356,8 +356,8 @@ TRACES_TOKEN=your-traces-token
 ```yaml
 # In docker-compose.yaml
 environment:
-  - OTEL_PYTHON_APP_TOKEN_GROUP_MONITORING_TOKEN=${MONITORING_TOKEN}
-  - OTEL_PYTHON_APP_TOKEN_GROUP_TRACES_TOKEN=${TRACES_TOKEN}
+  - OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=${MONITORING_TOKEN}
+  - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=${TRACES_TOKEN}
 ```
 
 ### Resource Limits

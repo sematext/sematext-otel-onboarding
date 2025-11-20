@@ -36,10 +36,10 @@ helm install sematext-agent sematext/sematext-agent \
   --set otel.traces.enabled=true \
   --set otel.metrics.enabled=true \
   --set otel.logs.enabled=true \
-  --set otel.services.java-spring-k8s-auto=java-auto-group \
-  --set otel.token-groups.java-auto-group.traces-token=your-traces-token \
-  --set otel.token-groups.java-auto-group.logs-token=your-logs-token \
-  --set otel.token-groups.java-auto-group.monitoring-token=your-monitoring-token
+  --set otel.services.all-services=my-token-group \
+  --set otel.token-groups.my-token-group.traces-token=your-traces-token \
+  --set otel.token-groups.my-token-group.logs-token=your-logs-token \
+  --set otel.token-groups.my-token-group.monitoring-token=your-monitoring-token
 ```
 
 **Note**: Use `region=US` for Sematext Cloud US or `region=EU` for Sematext Cloud EU.

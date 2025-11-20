@@ -92,7 +92,7 @@ Get your tokens from each App in Sematext Cloud.
 
 ```bash
 sudo /opt/spm/spm-monitor/bin/st-agent otel services add \
-  --service-names "my-nodejs-app" \
+  --all-services \
   --token-group "my-token-group"
 ```
 
