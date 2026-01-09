@@ -37,7 +37,7 @@ Edit `docker-compose.yaml` and update:
 - OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
 - OTEL_MY_TOKEN_GROUP_LOGS_TOKEN=your-logs-token
 - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
-- OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
+- OTEL_MY_TOKEN_GROUP_SERVICES=all-services
 ```
 
 Get your tokens from each App in Sematext Cloud.
@@ -160,7 +160,7 @@ sematext-agent:
     - OTEL_ENABLED=true
     - OTEL_LOGS_ENABLED=true
     - OTEL_TRACES_ENABLED=true
-    - OTEL_MY_TOKEN_GROUP_SERVICES="all-services"
+    - OTEL_MY_TOKEN_GROUP_SERVICES=all-services
   ports:
     - "4317:4317"  # Metrics gRPC
     - "4318:4318"  # Metrics HTTP
