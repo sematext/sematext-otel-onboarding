@@ -24,7 +24,7 @@ This repository provides practical examples of how to instrument applications wi
 | **[PHP](php/)** | Laravel |
 | **[Ruby](ruby/)** | Sinatra |
 
-**Note**: Only Node.js examples are currently implemented. Other languages will follow the same structure (baremetal/docker/kubernetes with auto and manual instrumentation).
+**Note**: Node.js, Java, Python, .NET, and PHP examples are currently implemented. Other languages will follow the same structure (baremetal/docker/kubernetes with auto and manual instrumentation).
 
 ## Telemetry Data
 
