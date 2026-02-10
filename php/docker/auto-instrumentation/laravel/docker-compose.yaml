@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  sematext-agent:
+    image: sematext/agent:latest-4
+    privileged: true
+    environment:
+      # Infrastructure token (replace with your token)
+      - INFRA_TOKEN=your-infra-token
+
+      # Region: US for Sematext Cloud US, EU for Sematext Cloud EU
+      - REGION=US
+
+      # Enable OpenTelemetry
+      - OTEL_ENABLED=true
+      #- OTEL_METRICS_ENABLED=true
+      - OTEL_TRACES_ENABLED=true
+
+      # Token configuration (replace with your tokens)
+      #- OTEL_MY_TOKEN_GROUP_MONITORING_TOKEN=your-monitoring-token
+      - OTEL_MY_TOKEN_GROUP_TRACES_TOKEN=your-traces-token
+      - OTEL_MY_TOKEN_GROUP_SERVICES=all-services
+
+    cap_add:
+      - SYS_ADMIN
+    restart: always
+    volumes:
+      - /:/hostfs:ro,rslave
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      - /var/run/:/var/run
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys:/host/sys:ro
+      - /dev:/hostfs/dev:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "4317:4317"  # Metrics gRPC
+      - "4318:4318"  # Metrics HTTP
+      - "4337:4337"  # Traces gRPC
+      - "4338:4338"  # Traces HTTP
+
+  php-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Laravel configuration
+      - APP_KEY=base64:fIdKPqi4HeuYlBkDjU9m0zS1CxTAXIcAFt7wvuV7//M=
+      - APP_DEBUG=true
+      - SESSION_DRIVER=array
+      - LOG_CHANNEL=stderr
+      # OpenTelemetry configuration
+      - OTEL_PHP_AUTOLOAD_ENABLED=true
+      - OTEL_SERVICE_NAME=php-laravel-docker-auto
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://sematext-agent:4338
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://sematext-agent:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - PORT=8080
+    depends_on:
+      - sematext-agent
+    restart: unless-stopped
