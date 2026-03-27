@@ -40,10 +40,10 @@ helm install sematext-agent sematext/sematext-agent \
   --set otel.enabled=true \
   --set otel.traces.enabled=true \
   --set otel.logs.enabled=true \
-  --set otel.services.all-services=my-token-group \
-  --set otel.token-groups.my-token-group.monitoring-token=your-monitoring-token \
-  --set otel.token-groups.my-token-group.traces-token=your-traces-token \
-  --set otel.token-groups.my-token-group.logs-token=your-logs-token
+  --set otel.services.all-services=my-otel-group \
+  --set otel.token-groups.my-otel-group.monitoring-token=your-monitoring-token \
+  --set otel.token-groups.my-otel-group.traces-token=your-traces-token \
+  --set otel.token-groups.my-otel-group.logs-token=your-logs-token
 ```
 
 **Note**: Use `region=US` for Sematext Cloud US or `region=EU` for Sematext Cloud EU.

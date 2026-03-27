@@ -62,19 +62,19 @@ sudo /opt/spm/spm-monitor/bin/st-agent otel enable --type logs
 ```bash
 # Add traces token
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --token-group "my-token-group" \
+  --token-group "my-otel-group" \
   --type traces \
   --token "YOUR_TRACES_TOKEN"
 
 # Add logs token
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --token-group "my-token-group" \
+  --token-group "my-otel-group" \
   --type logs \
   --token "YOUR_LOGS_TOKEN"
 
 # Add metrics token (optional)
 sudo /opt/spm/spm-monitor/bin/st-agent otel token-groups add \
-  --token-group "my-token-group" \
+  --token-group "my-otel-group" \
   --type metrics \
   --token "YOUR_MONITORING_TOKEN"
 ```
@@ -86,7 +86,7 @@ Get your tokens from each App in Sematext Cloud.
 ```bash
 sudo /opt/spm/spm-monitor/bin/st-agent otel services add \
   --all-services \
-  --token-group "my-token-group"
+  --token-group "my-otel-group"
 ```
 
 **Restart the agent:**
