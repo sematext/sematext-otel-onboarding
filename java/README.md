@@ -14,6 +14,18 @@ Spring Boot application examples with OpenTelemetry instrumentation for Sematext
 
 **Manual Instrumentation**: Traces ✅ Metrics ✅ Logs ✅ (full control, custom spans, complete observability)
 
+## OTel Java Agent Deployment Methods
+
+The auto-instrumentation examples use different agent deployment strategies depending on the environment:
+
+| Environment | Agent Deployment | How It Works |
+|-------------|-----------------|--------------|
+| **Baremetal** | Manual download | Download the agent JAR and pass `-javaagent` flag when running |
+| **Docker** | Baked in Dockerfile | Agent downloaded during image build via `ADD` instruction |
+| **Kubernetes** | Init container | Agent downloaded at pod startup by an init container into a shared volume |
+
+The Kubernetes init container approach keeps application images clean and decoupled from instrumentation, making it easy to update the agent version or toggle instrumentation without rebuilding images.
+
 ## Resources
 
 - [OpenTelemetry Java Documentation](https://opentelemetry.io/docs/languages/java/)

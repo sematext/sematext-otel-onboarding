@@ -1,6 +1,6 @@
 # Java Spring Boot - Auto-Instrumentation (Kubernetes)
 
-This example demonstrates automatic OpenTelemetry instrumentation for a Java Spring Boot application deployed to Kubernetes.
+This example demonstrates automatic OpenTelemetry instrumentation for a Java Spring Boot application deployed to Kubernetes. The OTel Java agent is injected at runtime via a Kubernetes **init container**, keeping the application image clean and decoupled from instrumentation.
 
 ## Telemetry Data
 
@@ -36,10 +36,10 @@ helm install sematext-agent sematext/sematext-agent \
   --set otel.traces.enabled=true \
   --set otel.metrics.enabled=true \
   --set otel.logs.enabled=true \
-  --set otel.services.all-services=my-token-group \
-  --set otel.token-groups.my-token-group.traces-token=your-traces-token \
-  --set otel.token-groups.my-token-group.logs-token=your-logs-token \
-  --set otel.token-groups.my-token-group.monitoring-token=your-monitoring-token
+  --set otel.services.all-services=my-otel-group \
+  --set otel.token-groups.my-otel-group.traces-token=your-traces-token \
+  --set otel.token-groups.my-otel-group.logs-token=your-logs-token \
+  --set otel.token-groups.my-otel-group.monitoring-token=your-monitoring-token
 ```
 
 **Note**: Use `region=US` for Sematext Cloud US or `region=EU` for Sematext Cloud EU.
@@ -50,7 +50,7 @@ helm install sematext-agent sematext/sematext-agent \
 docker build -t java-spring-k8s-auto:latest .
 ```
 
-The deployment.yaml is already configured to use `java-spring-k8s-auto:latest` with `imagePullPolicy: IfNotPresent`, which will use your local image.
+The Dockerfile builds a clean application image **without** the OTel agent. The agent is downloaded and injected by the init container at pod startup.
 
 **For Minikube users:** Load the image into Minikube's Docker daemon:
 ```bash
@@ -66,8 +66,11 @@ kubectl apply -f deployment.yaml
 ### 4. Verify Deployment
 
 ```bash
-# Check pod status
+# Check pod status (init container should complete before app starts)
 kubectl get pods -l app=java-spring-k8s-auto
+
+# Watch init container progress
+kubectl describe pod -l app=java-spring-k8s-auto
 
 # Check logs
 kubectl logs -l app=java-spring-k8s-auto -f
@@ -90,46 +93,89 @@ curl http://localhost:8080/error
 
 Open your Sematext Tracing, Monitoring, and Logs Apps to see telemetry data.
 
-## How Auto-Instrumentation Works
+## How It Works: Init Container Agent Injection
 
-### OpenTelemetry Java Agent
+Instead of baking the OTel Java agent into the Docker image, this example uses a Kubernetes init container to download the agent at pod startup and share it with the application container via a volume.
 
-Auto-instrumentation uses the OpenTelemetry Java agent, which automatically instruments:
+### Architecture
 
-- **Spring Boot / Spring MVC**: HTTP endpoints, controllers
-- **HTTP Client**: Outgoing HTTP requests
-- **JDBC**: Database queries
-- **Logging**: Automatic trace context injection
-
-The agent is attached via JVM argument:
-```bash
-java -javaagent:/app/opentelemetry-javaagent.jar -jar app.jar
+```
+Pod Startup Sequence:
+┌─────────────────────────────────────────────────────────┐
+│ 1. Init Container (alpine:3)                            │
+│    Downloads opentelemetry-javaagent.jar → /otel/       │
+│    (shared emptyDir volume)                             │
+└──────────────────────┬──────────────────────────────────┘
+                       │ volume: otel-agent
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│ 2. App Container (java-spring-k8s-auto)                 │
+│    JAVA_TOOL_OPTIONS="-javaagent:/otel/otel-agent.jar"  │
+│    Mounts /otel/ from shared volume                     │
+│    Agent auto-instruments the app at JVM startup        │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Zero Code Changes
+### Key Manifest Components
 
-No code changes are required. The agent bytecode-instruments your application at runtime:
-
-```java
-@RestController
-public class DemoController {
-    @GetMapping("/users/{id}")
-    public Map<String, Object> getUser(@PathVariable String id) {
-        // Automatically traced - no manual span creation needed
-        return userService.getUser(id);
-    }
-}
+**Init container** downloads the agent into a shared volume:
+```yaml
+initContainers:
+  - name: otel-agent
+    image: alpine:3
+    command: ['wget', '-O', '/otel/opentelemetry-javaagent.jar',
+      'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar']
+    volumeMounts:
+      - name: otel-agent
+        mountPath: /otel
 ```
 
-## Kubernetes Configuration
+**Application container** mounts the volume and activates the agent via `JAVA_TOOL_OPTIONS`:
+```yaml
+containers:
+  - name: java-spring-k8s-auto
+    volumeMounts:
+      - name: otel-agent
+        mountPath: /otel
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: "-javaagent:/otel/opentelemetry-javaagent.jar"
+```
 
-### Deployment Manifest
+**Shared volume** connects the init container to the app container:
+```yaml
+volumes:
+  - name: otel-agent
+    emptyDir: {}
+```
 
-The `deployment.yaml` includes:
+### Benefits Over Baking the Agent in the Dockerfile
 
-**OpenTelemetry Configuration:**
+| Aspect | Init Container | Baked in Dockerfile |
+|--------|---------------|---------------------|
+| **Image size** | Smaller (no agent JAR) | Larger (~20MB agent) |
+| **Agent updates** | Restart pod to get latest | Rebuild image |
+| **Image reuse** | Same image with/without instrumentation | Separate images needed |
+| **Separation of concerns** | App team owns image, platform team owns instrumentation | Coupled |
+| **Version pinning** | Change URL in manifest | Change version in Dockerfile |
+
+### Pinning the Agent Version
+
+The default configuration downloads the latest agent version. To pin a specific version, update the init container command in `deployment.yaml`:
+
+```yaml
+command: ['wget', '-O', '/otel/opentelemetry-javaagent.jar',
+  'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.21.0/opentelemetry-javaagent.jar']
+```
+
+## OpenTelemetry Configuration
+
+The deployment manifest configures OTel via environment variables:
+
 ```yaml
 env:
+- name: JAVA_TOOL_OPTIONS
+  value: "-javaagent:/otel/opentelemetry-javaagent.jar"
 - name: OTEL_SERVICE_NAME
   value: "java-spring-k8s-auto"
 - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -140,8 +186,6 @@ env:
   value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4318/v1/metrics"
 - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
   value: "http://st-agent-sematext-agent.sematext.svc.cluster.local:4328/v1/logs"
-- name: OTEL_LOGS_EXPORTER
-  value: "otlp"
 ```
 
 **Kubernetes Metadata:**
@@ -160,16 +204,19 @@ env:
 
 This adds namespace and pod information to all telemetry data.
 
-**Health Checks:**
-```yaml
-livenessProbe:
-  httpGet:
-    path: /actuator/health/liveness
-    port: 8080
-readinessProbe:
-  httpGet:
-    path: /actuator/health/readiness
-    port: 8080
+### Zero Code Changes
+
+No code changes are required. The agent bytecode-instruments your application at runtime:
+
+```java
+@RestController
+public class DemoController {
+    @GetMapping("/users/{id}")
+    public Map<String, Object> getUser(@PathVariable String id) {
+        // Automatically traced - no manual span creation needed
+        return userService.getUser(id);
+    }
+}
 ```
 
 ## Application Endpoints
@@ -219,6 +266,18 @@ kubectl delete -f deployment.yaml
 
 ## Troubleshooting
 
+### Init Container Failing
+
+```bash
+# Check init container status and logs
+kubectl describe pod -l app=java-spring-k8s-auto
+kubectl logs -l app=java-spring-k8s-auto -c otel-agent
+```
+
+Common causes:
+- **Network issues**: The init container needs internet access to download the agent from GitHub
+- **DNS resolution**: Ensure cluster DNS is working (`alpine:3` uses `wget`)
+
 ### Pods Not Starting
 
 ```bash
@@ -255,32 +314,31 @@ kubectl logs -l app=java-spring-k8s-auto | grep -i "opentelemetry"
 
 You should see:
 ```
+Picked up JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar
 [otel.javaagent] OpenTelemetry Javaagent started
 ```
 
-## OpenTelemetry Java Agent
+### Verify Agent JAR Was Downloaded
 
-### Version
-
-This example uses OpenTelemetry Java agent **v2.21.0**. Update in Dockerfile:
-```dockerfile
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.21.0/opentelemetry-javaagent.jar
+```bash
+kubectl exec -it <pod-name> -- ls -la /otel/
 ```
 
-### Automatic Instrumentation
+## What Gets Instrumented Automatically
 
-The agent automatically instruments:
-- Spring MVC / Spring Boot
-- Servlet API
-- JDBC drivers
-- HTTP clients (Apache, OkHttp, etc.)
-- Logging frameworks (SLF4J, Log4j)
+The OpenTelemetry Java agent automatically instruments:
+- **Spring MVC / Spring Boot**: REST controllers, request mappings
+- **Servlet API**: HTTP requests and responses
+- **JDBC drivers**: Database queries
+- **HTTP clients**: Apache, OkHttp, RestTemplate
+- **Logging frameworks**: SLF4J, Log4j, JUL
 
 See [supported libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
 
 ## Resources
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Kubernetes Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
 - [Sematext Agent Helm Chart](https://github.com/sematext/helm-charts)
 - [Sematext Agent Documentation](https://sematext.com/docs/agents/sematext-agent/opentelemetry/)
 - [OpenTelemetry Java](https://opentelemetry.io/docs/languages/java/)
