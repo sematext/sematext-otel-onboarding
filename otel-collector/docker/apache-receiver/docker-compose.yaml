@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  apache:
+    build: .
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    environment:
+      # Sematext Monitoring App token (replace with your token)
+      - METRICS_TOKEN=3da318bc-2c3f-4b1e-afe5-de29751b4dae
+    depends_on:
+      - apache
+    restart: unless-stopped

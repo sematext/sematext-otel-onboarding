@@ -1,0 +1,43 @@
+receivers:
+  hostmetrics:
+    # Root path for host filesystem (mounted from docker-compose volumes)
+    root_path: /hostfs
+    collection_interval: 60s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+        exclude_mount_points:
+          mount_points: [/proc/*, /sys/*, /etc/*, /var/lib/docker/*, /dev/shm]
+          match_type: regexp
+      load:
+      memory:
+      network:
+      process:
+        mute_process_name_error: true
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+
+processors:
+  batch:
+  resourcedetection:
+    detectors: [system]
+    system:
+      hostname_sources: ["os"]
+
+exporters:
+  otlp:
+    endpoint: otlp-grpc-receiver.sematext.com:443
+    compression: none
+    headers:
+      X-API-TOKEN: ${env:METRICS_TOKEN}
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [batch, resourcedetection]
+      exporters: [otlp, debug]

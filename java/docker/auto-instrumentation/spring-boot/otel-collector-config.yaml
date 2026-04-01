@@ -1,0 +1,42 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+exporters:
+  otlp_grpc/traces:
+    endpoint: otlp-grpc-receiver.sematext.com:443
+    compression: none
+    headers:
+      X-API-TOKEN: ${env:TRACES_TOKEN}
+  otlp_grpc/metrics:
+    endpoint: otlp-grpc-receiver.sematext.com:443
+    compression: none
+    headers:
+      X-API-TOKEN: ${env:METRICS_TOKEN}
+  otlp_grpc/logs:
+    endpoint: otlp-grpc-receiver.sematext.com:443
+    compression: none
+    headers:
+      X-API-TOKEN: ${env:LOGS_TOKEN}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_grpc/traces]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_grpc/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_grpc/logs]

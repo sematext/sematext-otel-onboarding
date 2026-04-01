@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  go-app:
+    build: .
+    ports:
+      - "8090:8090"
+    environment:
+      # OTel SDK log export — the app sends logs directly via OTLP (Beyla handles traces/metrics)
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://otlp-receiver.eu.sematext.com/v1/logs
+      - OTEL_EXPORTER_OTLP_LOGS_HEADERS=X-API-TOKEN=811ed5a7-ca79-4f11-a270-55267114a5ee
+      - OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
+    restart: unless-stopped
+
+  beyla:
+    image: grafana/beyla:latest
+    # Share the PID namespace of go-app so Beyla can attach via eBPF
+    pid: "service:go-app"
+    privileged: true
+    environment:
+      # Port that go-app listens on — Beyla uses this to find the target process
+      - BEYLA_OPEN_PORT=8090
+      - BEYLA_LOG_LEVEL=debug
+      # Config file path — required to activate the otel_logs_export pipeline
+      - BEYLA_CONFIG_PATH=/etc/beyla/config.yaml
+
+      # OpenTelemetry export configuration
+      - OTEL_SERVICE_NAME=go-gin-docker-auto
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-receiver.eu.sematext.com
+      # Sematext App tokens (replace with your tokens)
+      - OTEL_EXPORTER_OTLP_TRACES_HEADERS=X-API-TOKEN=1c13c9f6-136e-448d-a78c-abec006f4a32
+      - OTEL_EXPORTER_OTLP_METRICS_HEADERS=X-API-TOKEN=b5e3c8f6-4644-4360-b4af-d2d4a3b0a9d2
+      - OTEL_EXPORTER_OTLP_LOGS_HEADERS=X-API-TOKEN=811ed5a7-ca79-4f11-a270-55267114a5ee
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    volumes:
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys/fs/bpf:/sys/fs/bpf
+      - ./beyla-config.yaml:/etc/beyla/config.yaml:ro
+    depends_on:
+      - go-app
+    restart: unless-stopped

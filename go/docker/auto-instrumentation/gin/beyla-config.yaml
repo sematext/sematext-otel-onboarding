@@ -1,0 +1,3 @@
+otel_logs_export:
+  endpoint: https://otlp-receiver.eu.sematext.com
+  protocol: http/protobuf

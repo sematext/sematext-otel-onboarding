@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+      # Mount host filesystem so the collector can read host metrics
+      - /proc:/hostfs/proc:ro
+      - /sys:/hostfs/sys:ro
+      - /:/hostfs:ro,rslave
+    environment:
+      # Sematext Monitoring App token (replace with your token)
+      # - METRICS_TOKEN=7809ee16-7bb5-4ee5-a144-29ed1056547c
+      - METRICS_TOKEN=310ba8e9-3857-4fab-bde2-fba444365af6
+    restart: unless-stopped
