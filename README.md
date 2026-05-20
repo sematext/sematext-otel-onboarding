@@ -1,10 +1,10 @@
-# Sematext OpenTelemetry Examples
+# Sematext OTel Onboarding
 
-Examples demonstrating OpenTelemetry instrumentation for applications sending telemetry to Sematext Cloud Apps (Tracing App, Monitoring App, Logs App).
+Everything you need to instrument applications with OpenTelemetry and send telemetry to Sematext Cloud Apps (Tracing App, Monitoring App, Logs App): per-language reference examples, an end-to-end multi-service demo, and an AI-powered onboarding skill.
 
 ## Overview
 
-This repository provides practical examples of how to instrument applications with OpenTelemetry and send traces, metrics, and logs to Sematext Cloud. Two flows are demonstrated:
+This repository covers both sides of the OpenTelemetry onboarding story — runnable code you can copy from, and an AI skill that walks you through the setup conversationally. Two flows are demonstrated:
 
 - **Sematext Agent** — the service ships OTLP locally to a running Sematext Agent which forwards to Sematext Cloud. Covered by the per-language examples below. See [Sematext Agent OpenTelemetry docs](https://sematext.com/docs/agents/sematext-agent/opentelemetry/).
 - **Managed OTLP endpoint** — the service ships OTLP directly to Sematext's hosted receiver. Used by the end-to-end multi-service example, where it's the natural fit for browser-side telemetry.
