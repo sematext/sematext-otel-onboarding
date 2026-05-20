@@ -101,13 +101,15 @@ See [Sematext Agent OpenTelemetry docs](https://sematext.com/docs/agents/sematex
 
 Once the user has picked language + env + instrumentation, send them to the corresponding directory. The READMEs there have language-specific build and run commands.
 
-| Language | Framework | Path |
-|---|---|---|
-| Node.js | Express | [`nodejs/`](../nodejs/) |
-| Java | Spring Boot | [`java/`](../java/) |
-| Python | Flask | [`python/`](../python/) |
-| .NET | ASP.NET Core | [`dotnet/`](../dotnet/) |
-| PHP | Laravel | [`php/`](../php/) |
+### Single-service (one App at a time)
+
+| Language | Framework | Path | Flow |
+|---|---|---|---|
+| Node.js | Express | [`nodejs/`](../nodejs/) | Sematext Agent |
+| Java | Spring Boot | [`java/`](../java/) | Sematext Agent |
+| Python | Flask | [`python/`](../python/) | Sematext Agent |
+| .NET | ASP.NET Core | [`dotnet/`](../dotnet/) | Sematext Agent |
+| PHP | Laravel | [`php/`](../php/) | Sematext Agent |
 
 Each language directory has the same structure:
 
@@ -125,7 +127,15 @@ Each language directory has the same structure:
     └── manual-instrumentation/{framework}/
 ```
 
-**Note**: the existing per-language READMEs target the Sematext Agent flow. For the managed OTLP flow, follow the env-var block in Flow A above and otherwise use the example as-is — the SDK init code is identical, only the endpoint + auth headers differ.
+The per-language examples target the Sematext Agent flow. If the user picked the managed OTLP flow instead, the SDK init code is identical — only the endpoint + auth headers differ (follow the env-var block in Flow A above).
+
+### End-to-end (multi-service trace with W3C context propagation)
+
+| Stack | Path | Flow |
+|---|---|---|
+| React + Express | [`e2e/react-express/`](../e2e/react-express/) | Managed OTLP endpoint (via backend-as-proxy for the browser-side spans) |
+
+The e2e example is the natural reference for any setup that includes browser-side OpenTelemetry — browsers can't ship OTLP directly to a remote receiver (CORS), so the frontend POSTs spans to a same-origin endpoint on its own backend, which forwards to Sematext.
 
 ## Verify the data is landing
 
