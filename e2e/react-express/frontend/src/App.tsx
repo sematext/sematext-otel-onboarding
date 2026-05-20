@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { trace } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 const tracer = trace.getTracer('e2e-frontend.app');
 
@@ -23,10 +23,10 @@ export function App() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setRows(data.rows);
-        span.setStatus({ code: 1 }); // OK
+        span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
-        span.setStatus({ code: 2, message: String(err) }); // ERROR
+        span.setStatus({ code: SpanStatusCode.ERROR, message: String(err) });
       } finally {
         setLoading(false);
         span.end();
