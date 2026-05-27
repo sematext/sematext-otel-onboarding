@@ -41,7 +41,7 @@ Multi-service examples showing W3C trace context propagation across the full req
 
 ## AI-powered onboarding
 
-For an AI-driven walkthrough of the instrumentation choices (region, App type, flow, language, env, auto vs manual), invoke the [`sematext-otel` skill](skills/sematext-otel.md) in Claude Code or any agent that can read markdown.
+For an AI-driven walkthrough of the instrumentation choices (region, App type, flow, language, env, auto vs manual), invoke the [`sematext-otel` skill](skills/SKILL.md) in Claude Code or any agent that can read markdown.
 
 ## Telemetry Data
 
